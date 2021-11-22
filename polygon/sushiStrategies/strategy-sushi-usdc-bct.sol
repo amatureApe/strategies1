@@ -4,7 +4,7 @@ pragma solidity ^0.6.7;
 import "../strategy-sushi-farm-base.sol";
 
 contract StrategySushiUsdcBctLp is StrategySushiFarmBase {
-    // Pickle/Dai pool id in MasterChef contract
+    // Usdc/Bct pool id in MasterChef contract
     uint256 public sushi_usdc_bct_poolId = 37;
 
     //Token addresses
@@ -34,7 +34,7 @@ contract StrategySushiUsdcBctLp is StrategySushiFarmBase {
     // ***** Views *****
 
     function getName() external pure override returns (string memory) {
-        return "StrategySushiPickleDaiLp";
+        return "StrategySushiUsdcBctLp";
     }
 
     // ***** State Mutations *****
@@ -47,43 +47,37 @@ contract StrategySushiUsdcBctLp is StrategySushiFarmBase {
             _swapSushiswap(sushi, weth, _sushi);
         }
 
-        // Collect MATIC tokens
-        uint256 _wmatic = IERC20(wmatic).balanceOf(address(this));
-        if (_wmatic > 0) {
-            _swapSushiswap(wmatic, weth, _wmatic);
-        }
-
-        // Swap half WETH for pickle
+        // Swap half WETH for usdc
         uint256 _weth = IERC20(weth).balanceOf(address(this));
-            address[] memory pathPickle = new address[](3);
-            pathPickle[0] = weth;
-            pathPickle[1] = dai;
-            pathPickle[2] = pickle;
-            _swapSushiswapWithPath(pathPickle, _weth.div(2));
+            address[] memory pathUsdc = new address[](2);
+            pathUsdc[0] = weth;
+            pathUsdc[1] = usdc;
+            _swapSushiswapWithPath(pathUsdc, _weth.div(2));
         }
 
-        // Swap half WETH for dai
+        // Swap half WETH for bct
         if (_weth > 0) {
-          address[] memory pathDai = new address[](2);
-          pathDai[0] = weth;
-          pathDai[1] = dai;
-          _swapSushiswapWithPath(pathDai, _weth.div(2));
+          address[] memory pathBct = new address[](3);
+          pathBct[0] = weth;
+          pathBct[1] = usdc;
+          pathBct[2] = bct;
+          _swapSushiswapWithPath(pathBct, _weth.div(2));
         }
 
         // Adds in liquidity for token0/token1
-        uint256 _pickle = IERC20(pickle).balanceOf(address(this));
-        uint256 _dai = IERC20(dai).balanceOf(address(this));
-        if (_pickle > 0 && _dai > 0) {
-          IERC20(pickle).safeApprove(sushiRouter, 0);
-          IERC20(pickle).safeApprove(sushiRouter, _pickle);
-          IERC20(dai).safeApprove(sushiRouter, 0);
-          IERC20(dai).safeApprove(sushiRouter, _dai);
+        uint256 _usdc = IERC20(usdc).balanceOf(address(this));
+        uint256 _bct = IERC20(bct).balanceOf(address(this));
+        if (_usdc > 0 && _bct > 0) {
+          IERC20(usdc).safeApprove(sushiRouter, 0);
+          IERC20(usdc).safeApprove(sushiRouter, _usdc);
+          IERC20(bct).safeApprove(sushiRouter, 0);
+          IERC20(bct).safeApprove(sushiRouter, _bct);
 
           UniswapRouterV2(sushiRouter).addLiquidity(
-            pickle,
-            dai,
-            _pickle,
-            _dai,
+            usdc,
+            bct,
+            _usdc,
+            _bct,
             0,
             0,
             address(this),
@@ -91,13 +85,13 @@ contract StrategySushiUsdcBctLp is StrategySushiFarmBase {
           );
 
           //Donates DUST
-          IERC20(pickle).transfer(
+          IERC20(usdc).transfer(
             IController(controller).treasury(),
-            IERC20(pickle).balanceOf(address(this))
+            IERC20(usdc).balanceOf(address(this))
           );
-          IERC20(dai).safeTransfer(
+          IERC20(bct).safeTransfer(
             IController(controller).treasury(),
-            IERC20(dai).balanceOf(address(this))
+            IERC20(bct).balanceOf(address(this))
           );
         }
 
@@ -105,4 +99,3 @@ contract StrategySushiUsdcBctLp is StrategySushiFarmBase {
         _distributePerformanceFeesAndDeposit();
     }
 }
-//Comment
